@@ -1,25 +1,20 @@
 ﻿#include <iostream>
-#include <fstream>
 #include <string>
-#include <stdio.h>
+#include "stdio.h"
 #include <stdlib.h>
 #include <conio.h>
-#include <math.h>
-#include <vector>
-#include <fstream>
-#include <ctime>
+#include "math.h"
+#include "vector"
 #include <uEye.h>
 #include <uEye_tools.h>
 #include <ueye_deprecated.h>
-#include <wchar.h>
-#include <locale.h>
-#include <opencv/highgui.h>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv/cv.h>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include "opencv/highgui.h"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv/cv.h"
+#include "opencv2/core/core.hpp"
+#include "opencv2/highgui/highgui.hpp"
 #include "stdafx.h"
-#include <windows.h>
+#include "windows.h"
 
 
 using namespace cv;  
@@ -72,7 +67,7 @@ void CannyThreshold(int, void*)
 //	  }
 
 Mat drawing = Mat::zeros( im_contour.size(), CV_8UC3 ); //Matrix mit Contouren
- for( int i = 0; i < contours.size(); i++ )
+ for( int i = 0; i < contours.size() ; i++ )
      {
        Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
        drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() ); //war Point(5,5)
@@ -214,34 +209,34 @@ void CameraInit()
 	is_SetImageSize (hCam, img_width, img_height);
 
 	double disable = 0;
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_GAIN, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_WHITEBALANCE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_FRAMERATE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SHUTTER, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_GAIN, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_WHITEBALANCE,&disable,0);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_SHUTTER, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_GAIN_SHUTTER,&disable,0);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_FRAMERATE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_REFERENCE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_ANTI_FLICKER_MODE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_BACKLIGHT_COMP, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_CONTRAST_CORRECTION, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_SHUTTER_PHOTOM, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_SKIPFRAMES, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_SKIPFRAMES, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_GAIN_PHOTOM, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_HYSTERESIS, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_REFERENCE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_GAIN_MAX, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_SHUTTER_MAX, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_SPEED, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_OFFSET, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_GAIN_RANGE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_SPEED, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_ONCE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_BRIGHTNESS_ONCE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_HYSTERESIS, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_GAIN, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_WHITEBALANCE, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_FRAMERATE, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SHUTTER, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_GAIN, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_WHITEBALANCE,&disable,nullptr);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_SHUTTER, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_GAIN_SHUTTER,&disable,nullptr);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_FRAMERATE, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_REFERENCE, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_ANTI_FLICKER_MODE, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_BACKLIGHT_COMP, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_CONTRAST_CORRECTION, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_SHUTTER_PHOTOM, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_SKIPFRAMES, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_SKIPFRAMES, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_GAIN_PHOTOM, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_HYSTERESIS, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_REFERENCE, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_GAIN_MAX, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_SHUTTER_MAX, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_SPEED, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_OFFSET, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_GAIN_RANGE, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_SPEED, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_ONCE, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_BRIGHTNESS_ONCE, &disable, nullptr);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_HYSTERESIS, &disable, nullptr);
 
 	double FPS,NEWFPS;
 	FPS = 3; // 2.13 ist max
@@ -251,10 +246,9 @@ void CameraInit()
 	is_Exposure(hCam, IS_EXPOSURE_CMD_SET_EXPOSURE, (void*) &Exposure, sizeof(Exposure));
 
 	is_SetGamma(hCam,100); // Default = 100, corresponds to a gamma value of 1.0
-	is_Focus (hCam, FOC_CMD_SET_DISABLE_AUTOFOCUS, NULL, 0);
+	is_Focus (hCam, FOC_CMD_SET_DISABLE_AUTOFOCUS, nullptr, 0);
 	is_SetHardwareGain (hCam, 1, 0, 0, 0);
 
-	int ii = 0;
 	short stop=0;
 
 	while (stop==0)
@@ -263,21 +257,21 @@ void CameraInit()
 			void *pMemVoid;				//pointer to where the image is stored
 			is_GetImageMem (hCam, &pMemVoid);
 			IplImage * img;
-			img=cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 1); 
+			img = cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 1); 
 			img->nSize=sizeof(IplImage);
 			img->ID=0;
-			img->nChannels=1;
-			img->alphaChannel=0;
-			img->depth=8;
-			img->dataOrder=0;
-			img->origin=0;
-			img->align=4;	// egal
-			img->width=img_width;
-			img->height=img_height;
-			img->roi=NULL;
-			img->maskROI=NULL;
-			img->imageId=NULL;
-			img->tileInfo=NULL;
+			img->nChannels = 1;
+			img->alphaChannel = 0;
+			img->depth = 8;
+			img->dataOrder = 0;
+			img->origin = 0;
+			img->align = 4;	// egal
+			img->width = img_width;
+			img->height = img_height;
+			img->roi = nullptr;
+			img->maskROI = nullptr;
+			img->imageId = nullptr;
+			img->tileInfo = nullptr;
 			img->imageSize=img_width*img_height;
 			img->imageData=(char*)pMemVoid;  //the pointer to imagaData
 			img->widthStep=img_width;
@@ -335,8 +329,9 @@ im_rgb = imread (im_name + im_extension, CV_LOAD_IMAGE_COLOR);
 	/// Create a matrix of the same type and size as im_gray (for dst)
 	//dst.create( im_gray.size(), im_gray.type() );
 	//short stop = 0; //for closing	MAIN
-int rows = im_gray.rows;
-int cols = im_gray.cols;
+
+	auto rows = im_gray.rows;
+	auto cols = im_gray.cols;
 Size s = im_gray.size();
 rows = s.height;
 cols = s.width;
@@ -344,7 +339,7 @@ cout << s << "Size of Image" << endl;
 cout << rows << " Rows" << endl;
 cout << cols << " Cols" << endl;
 
-CannyThreshold(0, 0);
+CannyThreshold(0, nullptr);
 findCenterPoint();
 
 

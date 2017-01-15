@@ -1,0 +1,9 @@
+﻿1>------ Build started: Project: IMREAD, Configuration: Release Win32 ------
+1>  MAIN.cpp
+1>MAIN.cpp(70): warning C4018: '<' : signed/unsigned mismatch
+1>MAIN.cpp(171): warning C4018: '<' : signed/unsigned mismatch
+1>MAIN.cpp(172): warning C4018: '<' : signed/unsigned mismatch
+1>  Generating code
+1>  Finished generating code
+1>  IMREAD.vcxproj -> d:\documents\visual studio 2012\Projects\IMREAD\Release\IMREAD.exe
+========== Build: 1 succeeded, 0 failed, 0 up-to-date, 0 skipped ==========
