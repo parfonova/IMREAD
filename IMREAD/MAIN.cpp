@@ -26,16 +26,20 @@ int lowThreshold = 15 ;
 int const max_lowThreshold = 100;
 int ratio = 2;//war 3 ist ok oder vllt 2
 int kernel_size = 3;//gut so
-char* window_name_rgb = "Laser Beam in RGB";
-char* window_name_bw = "Laser Beam in BW";
-char* window_name_contour = "Laser Beam: Contours";
-char* window_name_dst = "rausfinden dst";
-char* window_name_bw_inv = "Invert BW";
-char* window_name_from_cam = "Image from Camera";
+//extern string window_name_rgb = "Laser Beam in RGB";
+//extern string window_name_bw = "Laser Beam in BW";
+//extern string window_name_contour = "Laser Beam: Contours";
+//extern string window_name_dst = "rausfinden dst";
+//extern string window_name_bw_inv = "Invert BW";
+//extern string window_name_from_cam = "Image from Camera";
+
+const int img_width = 3840;
+const int img_height = 2748;
+const int img_bpp = 8;
 
 Mat im_gray;
 Mat im_bw;
-Mat im_contour; // hier wird image mit countouren geladen
+Mat im_contour; 
 Mat dst;
 Mat im_bw_inv;
 
@@ -43,20 +47,29 @@ vector<vector<Point> > contours;
 vector<Vec4i> hierarchy;
 RNG rng(12345);
 
-
+HIDS hCam = 0;
+char* imgMem;
+int memId;
+string window_name_rgb = "Laser Beam in RGB";
+string window_name_bw = "Laser Beam in BW";
+string window_name_contour = "Laser Beam: Contours";
+string window_name_dst = "rausfinden dst";
+string window_name_bw_inv = "Invert BW";
+string window_name_from_cam = "Image from Camera";
+string im_name = "D:/Bild1";
+string im_extension = ".jpg";
+string bw = "_bw";
 
 void CannyThreshold(int, void*)
 {
   // Reduce noise with a kernel 3x3
- // blur( im_gray, im_contour, Size(3,3) ); //берет  изображение im_gray и записывает его в Mat im_contour
+	blur( im_gray, im_contour, Size(3,3) ); //берет  изображение im_gray и записывает его в Mat im_contour
  
 	Canny( im_bw, im_contour, lowThreshold, lowThreshold*ratio, kernel_size );
  
-  // Find contours
   //findContours( im_contour, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
   findContours( im_bw, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-  /// Using Canny's output as a mask, we display our resultt
-  dst = Scalar::all(0);
+   dst = Scalar::all(0);  // Using Canny's output as a mask, we display our resultt
 
 //  for(int i= 0; i < contours.size(); i++)
 //{
@@ -78,95 +91,90 @@ Mat drawing = Mat::zeros( im_contour.size(), CV_8UC3 ); //Matrix mit Contouren
   cout << contours.size()<< " Contours SIZE" << endl;
  }
 
+//Milenas Prog
+/*void CameraInit()
+{
+	//string file_path = "D:/Documents/Visual Studio 2012/Projects/CentreDetection/CentreDetection.txt";
+	//ofstream myfile;
+	//myfile.open (file_path, ios::trunc); // Inhalt der vorhandenen Datei löschen
+	//myfile	<< "Datum und Uhrzeit\t" << "Leistung" << endl << endl;
+	//myfile.close();
 
-//////Milenas Prog
-////void CameraInit()
-////{
-////	//string file_path = "D:/Documents/Visual Studio 2012/Projects/CentreDetection/CentreDetection.txt";
-////	//ofstream myfile;
-////	//myfile.open (file_path, ios::trunc); // Inhalt der vorhandenen Datei löschen
-////	//myfile	<< "Datum und Uhrzeit\t" << "Leistung" << endl << endl;
-////	//myfile.close();
-////
-//////	time_t t;
-////	//struct tm now;
-////
-////	HIDS hCam = 0;
-////	char* imgMem;
-////	int memId;
-////	HWND hwnd;
-////	int nMode;
-////
-////	if(is_InitCamera (&hCam, NULL)!= IS_SUCCESS)
-////	{
-////		cout << " Initialisierungsproblem: Kamera ausstecken-einstecken?" << endl;
-//////		return 0;
-////	}
-////	//const int s.width=3840, s.height=2748;
-////	const int img_bpp=8;
-////	is_AllocImageMem (hCam, s.width, s.height, img_bpp, &imgMem, &memId); // Um den DIB-Modus zu verwenden muss ein Speicher angelegt werden
-////	is_SetImageMem (hCam, imgMem, memId);//Speicher aktiv setzen
-////	is_SetDisplayMode (hCam, IS_SET_DM_DIB); //Bitmap-Modus
-////	//is_RenderBitmap( hCam, nMemID, hwnd, IS_RENDER_FIT_TO_WINDOW); // ein Bild wird aus einem Bildspeicher in dem angegebenen Fenster ausgegeben
-////	is_SetColorMode (hCam, IS_CM_MONO8);
-////	is_SetImageSize (hCam, s.width, s.height);
-////
-////	double disable = 0;
-////	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_GAIN, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_WHITEBALANCE, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_FRAMERATE, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SHUTTER, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_GAIN, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_WHITEBALANCE,&disable,0);
-////	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_SHUTTER, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_GAIN_SHUTTER,&disable,0);
-////	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_FRAMERATE, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_AUTO_REFERENCE, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_ANTI_FLICKER_MODE, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_BACKLIGHT_COMP, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_CONTRAST_CORRECTION, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_SHUTTER_PHOTOM, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_AUTO_SKIPFRAMES, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_SKIPFRAMES, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_GAIN_PHOTOM, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_HYSTERESIS, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_AUTO_REFERENCE, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_AUTO_GAIN_MAX, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_AUTO_SHUTTER_MAX, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_AUTO_SPEED, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_OFFSET, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_GAIN_RANGE, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_SPEED, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_ONCE, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_AUTO_BRIGHTNESS_ONCE, &disable, 0);
-////	is_SetAutoParameter (hCam, IS_SET_AUTO_HYSTERESIS, &disable, 0);
-////
-////	double FPS,NEWFPS;
-////	FPS = 3; // 2.13 ist max
-////	is_SetFrameRate(hCam,FPS,&NEWFPS);
-////
-////	double Exposure = 300; // Belichtungszeit (in ms)
-////	is_Exposure(hCam, IS_EXPOSURE_CMD_SET_EXPOSURE, (void*) &Exposure, sizeof(Exposure));
-////
-////	is_SetGamma(hCam,100); // Default = 100, corresponds to a gamma value of 1.0
-////	is_Focus (hCam, FOC_CMD_SET_DISABLE_AUTOFOCUS, NULL, 0);
-////	is_SetHardwareGain (hCam, 1, 0, 0, 0);
-////
-////	//int ii = 0;
-////	//short stop=0;
-////	
-////}
-////	
-//			
-//			
-//
-//
+//	time_t t;
+	//struct tm now;
+
+	HIDS hCam = 0;
+	char* imgMem;
+	int memId;
+	HWND hwnd;
+	int nMode;
+
+	if(is_InitCamera (&hCam, NULL)!= IS_SUCCESS)
+	{
+		cout << " Initialisierungsproblem: Kamera ausstecken-einstecken?" << endl;
+//		return 0;
+	}
+	//const int s.width=3840, s.height=2748;
+	const int img_bpp=8;
+	is_AllocImageMem (hCam, s.width, s.height, img_bpp, &imgMem, &memId); // Um den DIB-Modus zu verwenden muss ein Speicher angelegt werden
+	is_SetImageMem (hCam, imgMem, memId);//Speicher aktiv setzen
+	is_SetDisplayMode (hCam, IS_SET_DM_DIB); //Bitmap-Modus
+	//is_RenderBitmap( hCam, nMemID, hwnd, IS_RENDER_FIT_TO_WINDOW); // ein Bild wird aus einem Bildspeicher in dem angegebenen Fenster ausgegeben
+	is_SetColorMode (hCam, IS_CM_MONO8);
+	is_SetImageSize (hCam, s.width, s.height);
+
+	double disable = 0;
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_GAIN, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_WHITEBALANCE, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_FRAMERATE, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SHUTTER, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_GAIN, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_WHITEBALANCE,&disable,0);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_SHUTTER, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_GAIN_SHUTTER,&disable,0);
+	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_FRAMERATE, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_REFERENCE, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_ANTI_FLICKER_MODE, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_BACKLIGHT_COMP, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_CONTRAST_CORRECTION, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_SHUTTER_PHOTOM, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_SKIPFRAMES, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_SKIPFRAMES, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_GAIN_PHOTOM, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_HYSTERESIS, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_REFERENCE, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_GAIN_MAX, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_SHUTTER_MAX, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_SPEED, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_OFFSET, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_GAIN_RANGE, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_SPEED, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_ONCE, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_BRIGHTNESS_ONCE, &disable, 0);
+	is_SetAutoParameter (hCam, IS_SET_AUTO_HYSTERESIS, &disable, 0);
+
+	double FPS,NEWFPS;
+	FPS = 3; // 2.13 ist max
+	is_SetFrameRate(hCam,FPS,&NEWFPS);
+
+	double Exposure = 300; // Belichtungszeit (in ms)
+	is_Exposure(hCam, IS_EXPOSURE_CMD_SET_EXPOSURE, (void*) &Exposure, sizeof(Exposure));
+
+	is_SetGamma(hCam,100); // Default = 100, corresponds to a gamma value of 1.0
+	is_Focus (hCam, FOC_CMD_SET_DISABLE_AUTOFOCUS, NULL, 0);
+	is_SetHardwareGain (hCam, 1, 0, 0, 0);
+
+	//int ii = 0;
+	//short stop=0;
+	
+}*/
+
 Point findCenterPoint()
 {  
-	int minX = NULL;
-	int minY = NULL;
-	int maxX = NULL;
-	int maxY = NULL;
+	auto minX = NULL;
+	auto minY = NULL;
+	auto maxX = NULL;
+	auto maxY = NULL;
 
 	for(int i = 0; i < contours.size(); i++) {
 		for(int j = 0; j < contours[i].size(); j++) {
@@ -194,14 +202,68 @@ Point findCenterPoint()
 }
 
 
+
+Point findCenterPointIntens()
+{  
+	/*auto X = NULL;
+	auto Y = NULL;*/
+	vector<int> VectorX;
+	vector<int> VectorY;
+	int X;
+	int Y;
+	
+
+	for(int i = 0; i < rows; i++) 
+	{	for(int j = 0; j < cols; j++) {
+	  vector<int>::iterator it;
+  it = VectorX.begin();
+  it = VectorX.insert ( it , im_bw_inv.at<uchar>(i,j) );
+  it = VectorX.begin();
+  VectorX.insert (it,2,300);
+
+  // "it" no longer valid, get a new one:
+  //
+  //int myarray [] = { 501,502,503 };
+  //myvector.insert (myvector.begin(), myarray, myarray+3);
+
+  cout << "myvector contains:";
+  for (it=VectorX.begin(); it<myvector.end(); it++)
+    std::cout << ' ' << *it;
+  std::cout << '\n';
+
+  
+
+
+
+
+		 X = max_element(begin(VectorX), end(VectorX));
+		 Y = max_element(begin(VectorY), end(VectorY));
+		
+		
+		
+		
+		X + = im_bw_inv.at<uchar>(i,j);}
+		
+			
+			_bw_inv.at<uchar>(i,j);;
+
+		}
+	}
+	
+	cout << X << ", " << Y <<  " Center of Laser Beam from Intensiv of BW Image" << endl;
+	return Point(X,Y);
+}
+
+
+
+
+
 void CameraInit()
 
 {	HIDS hCam = 0;
 	char* imgMem;
 	int memId;
 
-	
-	const int img_width=3840, img_height=2748, img_bpp=8;
 	is_AllocImageMem (hCam, img_width, img_height, img_bpp, &imgMem, &memId);
 	is_SetImageMem (hCam, imgMem, memId);
 	is_SetDisplayMode (hCam, IS_SET_DM_DIB); //Bitmap-Modus
@@ -243,110 +305,107 @@ void CameraInit()
 	is_SetFrameRate(hCam,FPS,&NEWFPS);
 
 	double Exposure = 300; // Belichtungszeit (in ms)
-	is_Exposure(hCam, IS_EXPOSURE_CMD_SET_EXPOSURE, (void*) &Exposure, sizeof(Exposure));
+	is_Exposure(hCam, IS_EXPOSURE_CMD_SET_EXPOSURE, static_cast<void*>(&Exposure), sizeof(Exposure));
 
 	is_SetGamma(hCam,100); // Default = 100, corresponds to a gamma value of 1.0
 	is_Focus (hCam, FOC_CMD_SET_DISABLE_AUTOFOCUS, nullptr, 0);
 	is_SetHardwareGain (hCam, 1, 0, 0, 0);
 
-	short stop=0;
-
-	while (stop==0)
-	{		
-		if(is_FreezeVideo(hCam, IS_WAIT) == IS_SUCCESS){
-			void *pMemVoid;				//pointer to where the image is stored
-			is_GetImageMem (hCam, &pMemVoid);
-			IplImage * img;
-			img = cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 1); 
-			img->nSize=sizeof(IplImage);
-			img->ID=0;
-			img->nChannels = 1;
-			img->alphaChannel = 0;
-			img->depth = 8;
-			img->dataOrder = 0;
-			img->origin = 0;
-			img->align = 4;	// egal
-			img->width = img_width;
-			img->height = img_height;
-			img->roi = nullptr;
-			img->maskROI = nullptr;
-			img->imageId = nullptr;
-			img->tileInfo = nullptr;
-			img->imageSize=img_width*img_height;
-			img->imageData=(char*)pMemVoid;  //the pointer to imagaData
-			img->widthStep=img_width;
-			img->imageDataOrigin=(char*)pMemVoid; //and again
-
-			//now you can use your img just like a normal OpenCV image	
-
-			// Resize img (für cvShowImage)
-			IplImage *img_resized;
-			double resize_factor = 0.1;
-			img_resized = cvCreateImage(cvSize((int)(resize_factor*img->width), (int)(resize_factor*img->height)), img->depth, img->nChannels);
-			cvResize(img, img_resized);
-
-			cvNamedWindow( "A", 1 );
-			cvShowImage("A",img_resized);
-			cv::waitKey(1);
-		}
-		stop = GetAsyncKeyState(VK_LSHIFT);
-	}
-
-	is_ExitCamera(hCam);
 }
-
 
 int main()
 {	
+	cout << " Diese Datei wird ausgelesen -> " << im_name + im_extension <<  endl;
+	Mat im_rgb;
+	im_rgb = imread (im_name + im_extension, CV_LOAD_IMAGE_COLOR);
 	
-string im_name="Bild1";
-string im_extension = ".jpg";
-string bw = "_bw";
-cout << im_name + im_extension <<  endl;
-Mat im_rgb;
-im_rgb = imread (im_name + im_extension, CV_LOAD_IMAGE_COLOR);
-	cout << im_rgb.rows << ";st " << im_rgb.cols << endl;
-	namedWindow(window_name_rgb, CV_WINDOW_AUTOSIZE );
-	
-	imshow( window_name_rgb, im_rgb );
+	//namedWindow(window_name_rgb, CV_WINDOW_AUTOSIZE );	
+	//im_rgb.convertTo(im_rgb,CV_8U);
+	//imshow( window_name_rgb, im_rgb );
 	
 	cvtColor(im_rgb,im_gray,CV_RGB2GRAY); //RGB to grayscale
-
 	im_bw = im_gray > 128; //convert to binary
-	imwrite((im_name+bw+im_extension), im_bw); //save to disk
 	
-	namedWindow( window_name_bw, CV_WINDOW_AUTOSIZE );
-	imshow( window_name_bw, im_bw );
+	imwrite ((im_name + bw + im_extension), im_bw); //save to disk
 	
+	//namedWindow ( window_name_bw, CV_WINDOW_AUTOSIZE );
+	//imshow ( window_name_bw, im_bw );
 	double threshold_value = 1;
-	double max_BINARY_value = 255;
+	double max_BINARY_value = 1;
 
-	threshold( im_bw, im_bw_inv, threshold_value, max_BINARY_value,THRESH_BINARY_INV);// ein SWsBild, wo  Laserstrahl schwarz ist
-	namedWindow( window_name_bw, CV_WINDOW_AUTOSIZE );
-	imshow( window_name_bw_inv, im_bw_inv );
-
-	
+	threshold ( im_bw, im_bw_inv, threshold_value, max_BINARY_value,THRESH_BINARY_INV);// ein SWsBild, wo  Laserstrahl schwarz ist
+	namedWindow ( window_name_bw_inv, CV_WINDOW_AUTOSIZE );
+	imshow ( window_name_bw_inv, im_bw_inv );
+	int punktik,p2,p3,p4;
+	punktik = im_bw_inv.at<uchar>(152,45);
+	p2 = im_bw_inv.at<uchar>(521,400);
+	p3 = im_bw_inv.at<uchar>(500,500);
+	p4 = im_bw_inv.at<uchar>(450,521);
+	cout << punktik <<" "<< p2 <<" "<< p3<<" " << p4<<" " <<endl;	
 	/// Create a matrix of the same type and size as im_gray (for dst)
 	//dst.create( im_gray.size(), im_gray.type() );
 	//short stop = 0; //for closing	MAIN
 
 	auto rows = im_gray.rows;
 	auto cols = im_gray.cols;
-Size s = im_gray.size();
-rows = s.height;
-cols = s.width;
-cout << s << "Size of Image" << endl;
-cout << rows << " Rows" << endl;
-cout << cols << " Cols" << endl;
+	Size s = im_gray.size();
+	rows = s.height;
+	cols = s.width;
+	cout << s << " - Size of Image " << endl;
+	cout << rows << " - Rows" << endl;
+	cout << cols << " - Cols" << endl;
 
-CannyThreshold(0, nullptr);
-findCenterPoint();
+	CannyThreshold(0, nullptr);
+	findCenterPoint();
 
+	short stop=0;
 
-   waitKey(0);	
-	//cvDestroyAllWindows();
-    // Wait for a keystroke in the window
-	//stop = GetAsyncKeyState(VK_LSHIFT); 
-    return 0;
+	
+	do
+	{
+		stop = GetAsyncKeyState(VK_LSHIFT); //stop the calibration //Wait for a keystroke in the window
+	//	//if(is_FreezeVideo(hCam, IS_WAIT) == IS_SUCCESS){
+	//	//	void *pMemVoid;				//pointer to where the image is stored
+	//	//	is_GetImageMem (hCam, &pMemVoid);
+	//	//	IplImage * img;
+	//	//	img = cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 1); 
+	//	//	img->nSize = sizeof(IplImage);
+	//	//	img->ID = 0;
+	//	//	img->nChannels = 1;
+	//	//	img->alphaChannel = 0;
+	//	//	img->depth = 8;
+	//	//	img->dataOrder = 0;
+	//	//	img->origin = 0;
+	//	//	img->align = 4;	// egal
+	//	//	img->width = img_width;
+	//	//	img->height = img_height;
+	//	//	img->roi = nullptr;
+	//	//	img->maskROI = nullptr;
+	//	//	img->imageId = nullptr;
+	//	//	img->tileInfo = nullptr;
+	//	//	img->imageSize = img_width*img_height;
+	//	//	img->imageData =static_cast<char*>(pMemVoid);  //the pointer to imagaData
+	//	//	img->widthStep = img_width;
+	//	//	img->imageDataOrigin = static_cast<char*>(pMemVoid); //and again
+
+	//	//	//now you can use your img just like a normal OpenCV image	
+
+	//		//// Resize img (für cvShowImage)
+	//		//IplImage *img_resized;
+	//		//double resize_factor = 0.1;
+	//		//img_resized = cvCreateImage(cvSize(int(resize_factor * img->width), int(resize_factor * img->height)), img->depth, img->nChannels);
+	//		//cvResize(img, img_resized);
+
+	//		//cvNamedWindow( "A", 1 );
+	//		//cvShowImage("A",img_resized);
+	cv::waitKey(1);
+	///*	else 
+	//		CameraInit();*/
+	}	
+	while (stop==0);
+	
+	
+	//is_ExitCamera(hCam);
+	
+return 0;
 }
-

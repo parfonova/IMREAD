@@ -1,11 +1,11 @@
-﻿Build started 13.01.2017 20:07:36.
+﻿Build started 16.01.2017 13:35:59.
      1>Project "d:\documents\visual studio 2012\Projects\IMREAD\IMREAD\IMREAD.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          D:\visualstudio\VC\bin\CL.exe /c /I"C:\Program Files\IDS\uEye\Develop\include" /ID:\opencv300\opencv\build\x86\vc11\..\..\include /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt MAIN.cpp
          MAIN.cpp
-     1>d:\documents\visual studio 2012\projects\imread\imread\main.cpp(75): warning C4018: '<' : signed/unsigned mismatch
-     1>d:\documents\visual studio 2012\projects\imread\imread\main.cpp(176): warning C4018: '<' : signed/unsigned mismatch
-     1>d:\documents\visual studio 2012\projects\imread\imread\main.cpp(177): warning C4018: '<' : signed/unsigned mismatch
+     1>d:\documents\visual studio 2012\projects\imread\imread\main.cpp(83): warning C4018: '<' : signed/unsigned mismatch
+     1>d:\documents\visual studio 2012\projects\imread\imread\main.cpp(179): warning C4018: '<' : signed/unsigned mismatch
+     1>d:\documents\visual studio 2012\projects\imread\imread\main.cpp(180): warning C4018: '<' : signed/unsigned mismatch
        Link:
          D:\visualstudio\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"d:\documents\visual studio 2012\Projects\IMREAD\Debug\IMREAD.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:D:\opencv300\opencv\build\x86\vc11\staticlib /LIBPATH:D:\opencv300\opencv\build\x86\vc11\lib D:\opencv300\opencv\build\x86\vc11\lib\opencv_ts300d.lib D:\opencv300\opencv\build\x86\vc11\lib\opencv_world300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_calib3d300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_core300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_features2d300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_flann300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_highgui300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_imgcodecs300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_imgproc300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_ml300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_objdetect300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_photo300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_shape300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_stitching300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_superres300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_video300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_videoio300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_videostab300d.lib D:\opencv300\opencv\build\x86\vc11\staticlib\ippicvmt.lib D:\opencv300\opencv\build\x86\vc11\staticlib\IlmImfd.lib D:\opencv300\opencv\build\x86\vc11\staticlib\libtiffd.lib D:\opencv300\opencv\build\x86\vc11\staticlib\libpngd.lib D:\opencv300\opencv\build\x86\vc11\staticlib\libjasperd.lib D:\opencv300\opencv\build\x86\vc11\staticlib\libjpegd.lib D:\opencv300\opencv\build\x86\vc11\staticlib\libwebpd.lib D:\opencv300\opencv\build\x86\vc11\staticlib\zlibd.lib "C:\Program Files\IDS\uEye\Develop\Lib\uEye_api.lib" "C:\Program Files\IDS\uEye\Develop\Lib\uEye_tools.lib" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"d:\documents\visual studio 2012\Projects\IMREAD\Debug\IMREAD.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"d:\documents\visual studio 2012\Projects\IMREAD\Debug\IMREAD.lib" /MACHINE:X86 Debug\MAIN.obj
      1>MAIN.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/OPT:LBR' specification
@@ -14,4 +14,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:02.53
+Time Elapsed 00:00:02.67
