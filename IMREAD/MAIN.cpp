@@ -1,5 +1,8 @@
 ﻿#include <iostream>
+#include <ostream>
 #include <string>
+#include "ctime"
+#include "dos.h"
 #include "stdio.h"
 #include <stdlib.h>
 #include <conio.h>
@@ -10,28 +13,42 @@
 #include <ueye_deprecated.h>
 #include "opencv/highgui.h"
 #include "opencv2/imgproc/imgproc.hpp"
-#include "opencv/cv.h"
+#include <opencv/cv.h>
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "stdafx.h"
 #include "windows.h"
+#include <array>
+#include <opencv2/imgproc.hpp>
+#include <algorithm>
+//#include <unistd.h>
+#include <uEyeCaptureInterface.h>
+#include <thread>
+#include <chrono>
+#include <cstdlib>
+#include <numeric>
+#include <map>
+#include <iomanip>
+#include <functional>
+#include <opencv2/core/cuda.hpp>
+#include "opencv2/objdetect/objdetect.hpp"
+//for Gaussfitting
+
+
 
 
 using namespace cv;  
 using namespace std;
+
+
+short stop=0;
 char key;
-/// Global variables für Canny
+ /// Global variables für Canny
 int edgeThresh = 1;//ok
 int lowThreshold = 15 ;
 int const max_lowThreshold = 100;
-int ratio = 2;//war 3 ist ok oder vllt 2
+int ratio1 = 2;//war 3 ist ok oder vllt 2
 int kernel_size = 3;//gut so
-//extern string window_name_rgb = "Laser Beam in RGB";
-//extern string window_name_bw = "Laser Beam in BW";
-//extern string window_name_contour = "Laser Beam: Contours";
-//extern string window_name_dst = "rausfinden dst";
-//extern string window_name_bw_inv = "Invert BW";
-//extern string window_name_from_cam = "Image from Camera";
 
 const int img_width = 3840;
 const int img_height = 2748;
@@ -47,365 +64,584 @@ vector<vector<Point> > contours;
 vector<Vec4i> hierarchy;
 RNG rng(12345);
 
-HIDS hCam = 0;
-char* imgMem;
-int memId;
 string window_name_rgb = "Laser Beam in RGB";
 string window_name_bw = "Laser Beam in BW";
 string window_name_contour = "Laser Beam: Contours";
 string window_name_dst = "rausfinden dst";
 string window_name_bw_inv = "Invert BW";
 string window_name_from_cam = "Image from Camera";
-string im_name = "D:/Bild1";
+string im_name = "D:/Bild5";
 string im_extension = ".jpg";
 string bw = "_bw";
 
-void CannyThreshold(int, void*)
+
+vector<Point2f> findCenterMassCenter()
 {
   // Reduce noise with a kernel 3x3
 	blur( im_gray, im_contour, Size(3,3) ); //берет  изображение im_gray и записывает его в Mat im_contour
  
-	Canny( im_bw, im_contour, lowThreshold, lowThreshold*ratio, kernel_size );
+	Canny( im_bw, im_contour, lowThreshold, lowThreshold*ratio1, kernel_size );
  
   //findContours( im_contour, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
   findContours( im_bw, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
    dst = Scalar::all(0);  // Using Canny's output as a mask, we display our resultt
 
-//  for(int i= 0; i < contours.size(); i++)
-//{
-//    for(int j= 0; j < contours[i].size();j++) // run until j < contours[i].size();
-//    {
-//  cout << contours[i][j] << " Contours" << endl;
-// 	}
-//	  }
+   vector<Moments> mu(contours.size() );
+  for( int i = 0; i < contours.size(); i++ )
+     { mu[i] = moments( contours[i], false ); }
 
-Mat drawing = Mat::zeros( im_contour.size(), CV_8UC3 ); //Matrix mit Contouren
- for( int i = 0; i < contours.size() ; i++ )
+  ///  Get the mass centers:
+  vector<Point2f> mc( contours.size() );
+  for( int i = 0; i < contours.size(); i++ )
+     { mc[i] = Point2f( mu[i].m10/mu[i].m00 , mu[i].m01/mu[i].m00 ); }
+
+
+ Mat drawing = Mat::zeros( im_bw.size(), CV_8UC3 );
+  for( int i = 0; i< contours.size(); i++ )
      {
        Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
-       drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() ); //war Point(5,5)
-   }
+       drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
+       circle( drawing, mc[i], 4, color, -1, 8, 0 );
+    /// Calculate the area with the moments 00 and compare with the result of the OpenCV function
+ // printf("\t Info: Area and Contour Length \n");
+
+
+  for( int i = 0; i< contours.size(); i++ )
+     {
+      // printf(" * Contour[%d] - Area (M_00) = %.2f - Area OpenCV: %.2f - Length: %.2f \n", i, mu[i].m00, contourArea(contours[i]), arcLength( contours[i], true ) );
+       Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+       drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
+       circle( drawing, mc[i], 4, color, -1, 8, 0 );
+     }
+		 cout<<"Schwerpunkt des Objektes"<<mc<<endl;
+  return mc;
+}
+
   
-  imshow( window_name_contour, drawing );
+//  imshow( window_name_contour, drawing );
 
-  cout << contours.size()<< " Contours SIZE" << endl;
- }
+//  cout << contours.size()<< " Contours SIZE" << endl;
+}
 
-//Milenas Prog
-/*void CameraInit()
+
+Point findCenterPointContours()
 {
-	//string file_path = "D:/Documents/Visual Studio 2012/Projects/CentreDetection/CentreDetection.txt";
-	//ofstream myfile;
-	//myfile.open (file_path, ios::trunc); // Inhalt der vorhandenen Datei löschen
-	//myfile	<< "Datum und Uhrzeit\t" << "Leistung" << endl << endl;
-	//myfile.close();
-
-//	time_t t;
-	//struct tm now;
-
-	HIDS hCam = 0;
-	char* imgMem;
-	int memId;
-	HWND hwnd;
-	int nMode;
-
-	if(is_InitCamera (&hCam, NULL)!= IS_SUCCESS)
-	{
-		cout << " Initialisierungsproblem: Kamera ausstecken-einstecken?" << endl;
-//		return 0;
-	}
-	//const int s.width=3840, s.height=2748;
-	const int img_bpp=8;
-	is_AllocImageMem (hCam, s.width, s.height, img_bpp, &imgMem, &memId); // Um den DIB-Modus zu verwenden muss ein Speicher angelegt werden
-	is_SetImageMem (hCam, imgMem, memId);//Speicher aktiv setzen
-	is_SetDisplayMode (hCam, IS_SET_DM_DIB); //Bitmap-Modus
-	//is_RenderBitmap( hCam, nMemID, hwnd, IS_RENDER_FIT_TO_WINDOW); // ein Bild wird aus einem Bildspeicher in dem angegebenen Fenster ausgegeben
-	is_SetColorMode (hCam, IS_CM_MONO8);
-	is_SetImageSize (hCam, s.width, s.height);
-
-	double disable = 0;
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_GAIN, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_WHITEBALANCE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_FRAMERATE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SHUTTER, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_GAIN, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_WHITEBALANCE,&disable,0);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_SHUTTER, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_GAIN_SHUTTER,&disable,0);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_FRAMERATE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_REFERENCE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_ANTI_FLICKER_MODE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_BACKLIGHT_COMP, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_CONTRAST_CORRECTION, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_SHUTTER_PHOTOM, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_SKIPFRAMES, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_SKIPFRAMES, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_GAIN_PHOTOM, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_HYSTERESIS, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_REFERENCE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_GAIN_MAX, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_SHUTTER_MAX, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_SPEED, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_OFFSET, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_GAIN_RANGE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_SPEED, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_ONCE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_BRIGHTNESS_ONCE, &disable, 0);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_HYSTERESIS, &disable, 0);
-
-	double FPS,NEWFPS;
-	FPS = 3; // 2.13 ist max
-	is_SetFrameRate(hCam,FPS,&NEWFPS);
-
-	double Exposure = 300; // Belichtungszeit (in ms)
-	is_Exposure(hCam, IS_EXPOSURE_CMD_SET_EXPOSURE, (void*) &Exposure, sizeof(Exposure));
-
-	is_SetGamma(hCam,100); // Default = 100, corresponds to a gamma value of 1.0
-	is_Focus (hCam, FOC_CMD_SET_DISABLE_AUTOFOCUS, NULL, 0);
-	is_SetHardwareGain (hCam, 1, 0, 0, 0);
-
-	//int ii = 0;
-	//short stop=0;
-	
-}*/
-
-Point findCenterPoint()
-{  
 	auto minX = NULL;
 	auto minY = NULL;
 	auto maxX = NULL;
 	auto maxY = NULL;
 
-	for(int i = 0; i < contours.size(); i++) {
-		for(int j = 0; j < contours[i].size(); j++) {
+	for (int i = 0; i < contours.size(); i++)
+	{
+		for (int j = 0; j < contours[i].size(); j++)
+		{
 			int x = contours[i][j].x;
 			int y = contours[i][j].y;
 
-			if(minX == NULL || x < minX) {
+			if (minX == NULL || x < minX)
+			{
 				minX = x;
 			}
-			if(maxX == NULL || x > maxX) {
+			if (maxX == NULL || x > maxX)
+			{
 				maxX = x;
 			}
-			if(minY == NULL || y < minY) {
+			if (minY == NULL || y < minY)
+			{
 				minY = y;
 			}
-			if(maxY == NULL || y > maxY) {
+			if (maxY == NULL || y > maxY)
+			{
 				maxY = y;
 			}
 		}
 	}
 	int centerX = (maxX + minX) / 2;
 	int centerY = (maxY + minY) / 2;
-	cout << centerX << ", " << centerY <<  " Center of Laser Beam" << endl;
+	cout << centerX << ", " << centerY << " Center of Laser Beam" << endl;
 	return Point(centerX, centerY);
 }
 
+//Point findCenterPointIntens(Mat)
+//		{  
+//	vector<int> VectorX(im_bw_inv.cols,0);
+//	vector<int> VectorY(im_bw_inv.rows,0);	
+//	int maxX = 0;
+//	int maxY = 0;
+//	
+//	vector<int>::iterator itX;
+//	vector<int>::iterator itY;
+//
+//	for(int i = 0; i < im_bw_inv.cols; i++) 
+//	{	for(int j = 0; j < im_bw_inv.rows; j++)
+//		{	int sumX += sumX;
+//		
+//			VectorX.push_back(sumX) += sumX;
+//			
+//			//unsinnint sumX = im_bw_inv.at<uint>(i,j);
+//			
+//		if (sumX <= maxX) { maxX = sumX; }
+//			cout << "Centre X" << maxX <<endl;
+//			//do{maxX = pixel
+//			
+//
+//		//	maxY += im_bw_inv.at<uchar>(i,j);
+//			//VectorY[j] += VectorY[j];
+//			/*itY = VectorY.begin();
+//			itX = VectorX.insert ( itX , im_bw_inv.at<uchar>(i,j) );*/
+//
+//		/*	itY = VectorY.begin();
+//			itY = VectorY.insert(itY, im_bw_inv.at<uchar>(i, j));*/
+//		}
+//	
+//	}
+//
+//    /*	 X = max_element(begin(VectorX), end(VectorX));
+//		 Y = max_element(begin(VectorY), end(VectorY));
+//		
+//		X + = im_bw_inv.at<uchar>(i,j);}*/
+////				
+////for (itX = VectorX.begin(); itX != VectorX.end(); ++itX)
+////			{
+////				if (maxX < *itX)
+////				        maxX = *itX;
+////			}
+////
+////for (itY = VectorY.begin(); itY != VectorY.end(); ++itY)
+////			{
+////				if (maxY < *itY)
+////				        maxY = *itY;
+////			}
+//
+//
+//	cout << maxX << ", " << maxY <<  " Center of Laser Beam from Intensivity of BW Image " << endl;
+//	return Point(maxX, maxY);
+//}
+
+//void Histogrambuild( )
+//{	Mat  src, dst;
+//
+//	
+//	/// Load image
+//	String imageName("D:/Bild4.jpg"); // by default
+//	src = imread(imageName, IMREAD_COLOR);
+//	
+//
+//	/// Separate the image in 3 places ( B, G and R )
+//	vector<Mat> bgr_planes;
+//	split(src, bgr_planes);
+//
+//	/// Establish the number of bins
+//	int histSize = 256;
+//
+//	/// Set the ranges ( for B,G,R) )
+//	float range[] = {0, 256};
+//	const float* histRange = {range};
+//
+//	bool uniform = true;
+//	bool accumulate = false;
+//
+//	Mat b_hist, g_hist, r_hist;
+//
+//	/// Compute the histograms:
+//	calcHist(&bgr_planes[0], 1, 0, Mat(), b_hist, 1, &histSize, &histRange, uniform, accumulate);
+//	calcHist(&bgr_planes[1], 1, 0, Mat(), g_hist, 1, &histSize, &histRange, uniform, accumulate);
+//	calcHist(&bgr_planes[2], 1, 0, Mat(), r_hist, 1, &histSize, &histRange, uniform, accumulate);
+//
+//	// Draw the histograms for B, G and R
+//	int hist_w = 1024;
+//	int hist_h = 800;
+//	int bin_w = cvRound((double) hist_w / histSize);
+//
+//	Mat histImage(hist_h, hist_w, CV_8UC3, Scalar(0, 0, 0));
+//
+//	/// Normalize the result to [ 0, histImage.rows ]
+//	normalize(b_hist, b_hist, 0, histImage.rows, NORM_MINMAX, -1, Mat());
+//	normalize(g_hist, g_hist, 0, histImage.rows, NORM_MINMAX, -1, Mat());
+//	normalize(r_hist, r_hist, 0, histImage.rows, NORM_MINMAX, -1, Mat());
+//
+//	/// Draw for each channel EIGENTLICH UNNOETIG  SPATER LOESCHEN
+//	for (int i = 1; i < histSize; i++)
+//	{
+//		line(histImage, Point(bin_w * (i - 1), hist_h - cvRound(b_hist.at<float>(i - 1))),
+//		     Point(bin_w * (i), hist_h - cvRound(b_hist.at<float>(i))),
+//		     Scalar(255, 0, 0), 2, 8, 0);
+//		line(histImage, Point(bin_w * (i - 1), hist_h - cvRound(g_hist.at<float>(i - 1))),
+//		     Point(bin_w * (i), hist_h - cvRound(g_hist.at<float>(i))),
+//		     Scalar(0, 255, 0), 2, 8, 0);
+//		line(histImage, Point(bin_w * (i - 1), hist_h - cvRound(r_hist.at<float>(i - 1))),
+//		     Point(bin_w * (i), hist_h - cvRound(r_hist.at<float>(i))),
+//		     Scalar(0, 0, 255), 2, 8, 0);
+//	}
+//
+//	/// Display
+//	namedWindow("calcHist Demo", WINDOW_AUTOSIZE);
+//	imshow("calcHist Demo", histImage);
+//
+//	waitKey(0);
+//}
 
 
-Point findCenterPointIntens()
-{  
-	/*auto X = NULL;
-	auto Y = NULL;*/
-	vector<int> VectorX;
+
+
+
+//void createGaussian(Size& image1, Mat & output, int uX, int uY, float sigmaX, float sigmaY, float amplitude = 1.0f)
+//{
+//	Mat temp = Mat(image1, CV_32F);
+//	for (int row = 0; row < im_bw.rows; row++)
+//	{
+//		for (int col = 0; col < im_bw.cols; col++)
+//		{
+//			float x = (col-uX)*((float)col-uX)/(2.0f*sigmaX*sigmaX);
+//			float y = (row-uY)*((float)row-uY)/(2.0f*sigmaY*sigmaY);
+//			float value = amplitude*exp(-(x+y));
+//			temp.at<float>(row,col) = value;
+//		}
+//
+//	}
+//	normalize(temp,temp,0.0f,1.0f,NORM_MINMAX);
+//	output = temp;
+//}
+
+
+
+
+
+
+
+
+Point findCenterPointHist(const Mat& image)
+
+{
+	map<int, int> histogram;
+	int CenterX = 0;
+	int CenterY = 0;
+
+	vector<int> VectorX(image.cols, 0);
 	vector<int> VectorY;
-	int X;
-	int Y;
-	
-
-	for(int i = 0; i < rows; i++) 
-	{	for(int j = 0; j < cols; j++) {
-	  vector<int>::iterator it;
-  it = VectorX.begin();
-  it = VectorX.insert ( it , im_bw_inv.at<uchar>(i,j) );
-  it = VectorX.begin();
-  VectorX.insert (it,2,300);
-
-  // "it" no longer valid, get a new one:
-  //
-  //int myarray [] = { 501,502,503 };
-  //myvector.insert (myvector.begin(), myarray, myarray+3);
-
-  cout << "myvector contains:";
-  for (it=VectorX.begin(); it<myvector.end(); it++)
-    std::cout << ' ' << *it;
-  std::cout << '\n';
-
-  
 
 
-
-
-		 X = max_element(begin(VectorX), end(VectorX));
-		 Y = max_element(begin(VectorY), end(VectorY));
-		
-		
-		
-		
-		X + = im_bw_inv.at<uchar>(i,j);}
-		
-			
-			_bw_inv.at<uchar>(i,j);;
-
+	for (int row = 0; row < image.rows; row++)
+	{
+		int coloredCols = 0;
+		for (int col = 0; col < image.cols; col++)
+		{
+			int pixelValue = image.at<uchar>(row, col);
+			if (pixelValue == 1)
+			{
+				coloredCols += 1;
+				VectorX.at(col) = VectorX.at(col) + 1;
+			}
 		}
+		VectorY.push_back(coloredCols);
 	}
+
+
+	double sumVertical = accumulate(VectorX.begin(), VectorX.end(), 0);
+	double sumHorizontal = accumulate(VectorY.begin(), VectorY.end(), 0);
+	if (sumHorizontal != sumVertical)
+	{
+		cout << "Error counting pixels" << endl;
+	}
+	else
+	{
+		cout << "sumVertical, sumHorizontal" << sumVertical << "," << sumHorizontal << endl;
+	}
+
+	int MeanValuePixels = sumVertical / 2;
+	int sumY = 0;
+	int sumX = 0;
+	int itY = 0;
+	int itX = 0;
+
+
+	for ( itY = 0; itY < sumVertical; itY++)
+	{
+		sumY += VectorY.at(itY);
+		CenterY = itY;
+		if (sumY >= MeanValuePixels) break; 
+			
+	}
+
+cout << CenterY << "Integrierte CenterY" << endl;
+
+
+	for ( itX = 0; itX < sumHorizontal; itX++)
+	{		sumX += VectorX.at(itX);
+		CenterX = itX;
+		if (sumX >= MeanValuePixels) break; 
+	}
+
+cout << CenterX << "Integrierte CenterX" << endl;
+
+
+
+
+	/*
+		float x = (col-uX)*((float)col-uX)/(2.0f*sigmaX*sigmaX);
+		float y = (row-uY)*((float)row-uY)/(2.0f*sigmaY*sigmaY);
+		float value = amplitude*exp(-(x+y));
+		temp.at<float>(row,col) = value;*/
 	
-	cout << X << ", " << Y <<  " Center of Laser Beam from Intensiv of BW Image" << endl;
-	return Point(X,Y);
+
+
+
+return Point(sumVertical, sumHorizontal);
+	
+
+////sumVertical = accumulate(VectorVertical.begin(), VectorVertical.end(), 0);
+//	for (auto elem : histogram)
+//	{
+//		cout << elem.first << " " << elem.second << "\n";
+//	}
+
+//int MeanHistX = sum(X[i])/n;
+//int variance = sum(Xi-mean)^2/(n-1);
+
+//return Point(CenterX,CenterY);
 }
+
+
+map<int, int> computeHistogram(const Mat& image)
+{
+    map<int, int> histogram;
+
+    for ( int row = 0; row < image.rows; ++row)
+    {
+        for ( int col = 0; col < image.cols; ++col)
+        {
+          ++histogram[(int)image.at<uchar>(row, col)];
+
+        }
+    }
+
+    return histogram;
+}
+
+
+
+void printHistogram(const map<int, int>& histogram) //create vector  with 0 and 1 for x and y derection
+		{
+			map<int, int>::const_iterator histogram_iter;
+			cout << "\n------------------\n";
+			for (histogram_iter = histogram.begin(); histogram_iter != histogram.end(); ++histogram_iter)
+			{
+				cout << setw(5) << histogram_iter->first << " : " << histogram_iter->second << "\n";
+			}
+			cout << "------------------\n";
+		}
+
+
+
 
 
 
 
 
 void CameraInit()
+{
+	
 
-{	HIDS hCam = 0;
-	char* imgMem;
-	int memId;
-
-	is_AllocImageMem (hCam, img_width, img_height, img_bpp, &imgMem, &memId);
-	is_SetImageMem (hCam, imgMem, memId);
-	is_SetDisplayMode (hCam, IS_SET_DM_DIB); //Bitmap-Modus
-	is_SetColorMode (hCam, IS_CM_MONO8);
-	is_SetImageSize (hCam, img_width, img_height);
-
-	double disable = 0;
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_GAIN, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_WHITEBALANCE, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_FRAMERATE, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SHUTTER, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_GAIN, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_WHITEBALANCE,&disable,nullptr);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_SHUTTER, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_GAIN_SHUTTER,&disable,nullptr);
-	is_SetAutoParameter (hCam, IS_SET_ENABLE_AUTO_SENSOR_FRAMERATE, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_REFERENCE, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_ANTI_FLICKER_MODE, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_BACKLIGHT_COMP, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_CONTRAST_CORRECTION, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_SHUTTER_PHOTOM, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_SKIPFRAMES, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_SKIPFRAMES, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_SENS_AUTO_GAIN_PHOTOM, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_HYSTERESIS, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_REFERENCE, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_GAIN_MAX, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_SHUTTER_MAX, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_SPEED, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_OFFSET, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_GAIN_RANGE, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_SPEED, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_WB_ONCE, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_BRIGHTNESS_ONCE, &disable, nullptr);
-	is_SetAutoParameter (hCam, IS_SET_AUTO_HYSTERESIS, &disable, nullptr);
-
-	double FPS,NEWFPS;
-	FPS = 3; // 2.13 ist max
-	is_SetFrameRate(hCam,FPS,&NEWFPS);
-
-	double Exposure = 300; // Belichtungszeit (in ms)
-	is_Exposure(hCam, IS_EXPOSURE_CMD_SET_EXPOSURE, static_cast<void*>(&Exposure), sizeof(Exposure));
-
-	is_SetGamma(hCam,100); // Default = 100, corresponds to a gamma value of 1.0
-	is_Focus (hCam, FOC_CMD_SET_DISABLE_AUTOFOCUS, nullptr, 0);
-	is_SetHardwareGain (hCam, 1, 0, 0, 0);
 
 }
+	
+
+
+
+
 
 int main()
-{	
-	cout << " Diese Datei wird ausgelesen -> " << im_name + im_extension <<  endl;
-	Mat im_rgb;
-	im_rgb = imread (im_name + im_extension, CV_LOAD_IMAGE_COLOR);
-	
-	//namedWindow(window_name_rgb, CV_WINDOW_AUTOSIZE );	
-	//im_rgb.convertTo(im_rgb,CV_8U);
-	//imshow( window_name_rgb, im_rgb );
-	
-	cvtColor(im_rgb,im_gray,CV_RGB2GRAY); //RGB to grayscale
-	im_bw = im_gray > 128; //convert to binary
-	
-	imwrite ((im_name + bw + im_extension), im_bw); //save to disk
-	
-	//namedWindow ( window_name_bw, CV_WINDOW_AUTOSIZE );
-	//imshow ( window_name_bw, im_bw );
-	double threshold_value = 1;
-	double max_BINARY_value = 1;
+		{   
+			//CameraInit
+			HIDS hCam = 0;
+			char* imgMem;
+			int memId;
 
-	threshold ( im_bw, im_bw_inv, threshold_value, max_BINARY_value,THRESH_BINARY_INV);// ein SWsBild, wo  Laserstrahl schwarz ist
-	namedWindow ( window_name_bw_inv, CV_WINDOW_AUTOSIZE );
-	imshow ( window_name_bw_inv, im_bw_inv );
-	int punktik,p2,p3,p4;
-	punktik = im_bw_inv.at<uchar>(152,45);
-	p2 = im_bw_inv.at<uchar>(521,400);
-	p3 = im_bw_inv.at<uchar>(500,500);
-	p4 = im_bw_inv.at<uchar>(450,521);
-	cout << punktik <<" "<< p2 <<" "<< p3<<" " << p4<<" " <<endl;	
-	/// Create a matrix of the same type and size as im_gray (for dst)
-	//dst.create( im_gray.size(), im_gray.type() );
-	//short stop = 0; //for closing	MAIN
+			Mat im_rgb;
+			im_rgb = imread(im_name + im_extension, CV_LOAD_IMAGE_COLOR);
+			cout << " Diese Datei wird ausgelesen -> " << im_name + im_extension <<  endl;
+			namedWindow(window_name_rgb, CV_WINDOW_AUTOSIZE );	
+			imshow( window_name_rgb, im_rgb );
+						
+			//Mat im_rgb;
+			//Mat src, dst;
 
-	auto rows = im_gray.rows;
-	auto cols = im_gray.cols;
-	Size s = im_gray.size();
-	rows = s.height;
-	cols = s.width;
-	cout << s << " - Size of Image " << endl;
-	cout << rows << " - Rows" << endl;
-	cout << cols << " - Cols" << endl;
+			cvtColor(im_rgb, im_gray, CV_RGB2GRAY); //RGB to grayscale
+			im_bw = im_gray > 128; //convert to binary
 
-	CannyThreshold(0, nullptr);
-	findCenterPoint();
+			imwrite ((im_name + bw + im_extension), im_bw); //save to disk
+			namedWindow ( window_name_bw, CV_WINDOW_AUTOSIZE );
+			imshow ( window_name_bw, im_bw );
+			cout << "SIZE"<<im_bw.size <<endl;
+			
+	//		printHistogram(computeHistogram(im_rgb));
+			
+			//TRESHOLD BINARY INV
+			//double threshold_value = 1;
+			//double max_BINARY_value = 1;
+			//threshold ( im_bw, im_bw_inv, threshold_value, max_BINARY_value,THRESH_BINARY_INV);// ein SWsBild, wo  Laserstrahl schwarz ist
+			//namedWindow ( window_name_bw_inv, CV_WINDOW_AUTOSIZE );
+			//imshow ( window_name_bw_inv, im_bw_inv);
+		findCenterMassCenter();//Methode mit Objekt Schwerpunkt
+		findCenterPointContours();//Methode mit Contouren
+			findCenterPointHist(im_bw); //Methode mit Integralen und Histogramen
+		
+			
 
-	short stop=0;
+			
+			
+
+			//if (is_InitCamera(&hCam, NULL) != IS_SUCCESS)
+			//{
+			//	cout << " Initialisierungsproblem: Kamera ausstecken-einstecken?" << endl;
+			//	//		return 0;
+			//}
+
+			//const int img_width = 3840, img_height = 2748, img_bpp = 2;// img_bpp = 8   bits pro pixel
+			//is_AllocImageMem(hCam, img_width, img_height, img_bpp, &imgMem, &memId);
+			//is_SetImageMem(hCam, imgMem, memId);
+			//is_SetDisplayMode(hCam, IS_SET_DM_DIB); //Bitmap-Modus
+			//is_SetColorMode(hCam, IS_CM_MONO8);
+			//is_SetImageSize(hCam, img_width, img_height);
+
+			//double disable = 0;
+			//is_SetAutoParameter(hCam, IS_SET_ENABLE_AUTO_GAIN, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_ENABLE_AUTO_WHITEBALANCE, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_ENABLE_AUTO_FRAMERATE, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_ENABLE_AUTO_SHUTTER, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_ENABLE_AUTO_SENSOR_GAIN, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_ENABLE_AUTO_SENSOR_WHITEBALANCE, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_ENABLE_AUTO_SENSOR_SHUTTER, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_ENABLE_AUTO_SENSOR_GAIN_SHUTTER, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_ENABLE_AUTO_SENSOR_FRAMERATE, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_AUTO_REFERENCE, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_ANTI_FLICKER_MODE, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_SENS_AUTO_BACKLIGHT_COMP, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_SENS_AUTO_CONTRAST_CORRECTION, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_SENS_AUTO_SHUTTER_PHOTOM, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_AUTO_SKIPFRAMES, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_AUTO_WB_SKIPFRAMES, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_SENS_AUTO_GAIN_PHOTOM, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_AUTO_WB_HYSTERESIS, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_AUTO_REFERENCE, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_AUTO_GAIN_MAX, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_AUTO_SHUTTER_MAX, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_AUTO_SPEED, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_AUTO_WB_OFFSET, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_AUTO_WB_GAIN_RANGE, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_AUTO_WB_SPEED, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_AUTO_WB_ONCE, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_AUTO_BRIGHTNESS_ONCE, &disable, 0);
+			//is_SetAutoParameter(hCam, IS_SET_AUTO_HYSTERESIS, &disable, 0);
+
+			//double FPS, NEWFPS;
+			//FPS = 3; // 2.13 ist max
+			//is_SetFrameRate(hCam, FPS, &NEWFPS);
+
+			//double Exposure = 300; // Belichtungszeit (in ms)
+			//is_Exposure(hCam, IS_EXPOSURE_CMD_SET_EXPOSURE, (void*) &Exposure, sizeof(Exposure));
+
+			//is_SetGamma(hCam, 100); // Default = 100, corresponds to a gamma value of 1.0
+			//is_Focus(hCam, FOC_CMD_SET_DISABLE_AUTOFOCUS, NULL, 0);
+			//is_SetHardwareGain(hCam, 1, 0, 0, 0);
+
+			//void* pMemVoid; //pointer to where the image is stored
+			//		is_GetImageMem(hCam, &pMemVoid);
+			//		IplImage* img;
+
+
+			////IplImage *img_resized;
+			////double resize_factor = 1;
+			////	img_resized = cvCreateImage(cvSize(static_cast<int>(resize_factor * img->width), static_cast<int>(resize_factor * img->height)), img->depth, img->nChannels);
 
 	
-	do
-	{
-		stop = GetAsyncKeyState(VK_LSHIFT); //stop the calibration //Wait for a keystroke in the window
-	//	//if(is_FreezeVideo(hCam, IS_WAIT) == IS_SUCCESS){
-	//	//	void *pMemVoid;				//pointer to where the image is stored
-	//	//	is_GetImageMem (hCam, &pMemVoid);
-	//	//	IplImage * img;
-	//	//	img = cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 1); 
-	//	//	img->nSize = sizeof(IplImage);
-	//	//	img->ID = 0;
-	//	//	img->nChannels = 1;
-	//	//	img->alphaChannel = 0;
-	//	//	img->depth = 8;
-	//	//	img->dataOrder = 0;
-	//	//	img->origin = 0;
-	//	//	img->align = 4;	// egal
-	//	//	img->width = img_width;
-	//	//	img->height = img_height;
-	//	//	img->roi = nullptr;
-	//	//	img->maskROI = nullptr;
-	//	//	img->imageId = nullptr;
-	//	//	img->tileInfo = nullptr;
-	//	//	img->imageSize = img_width*img_height;
-	//	//	img->imageData =static_cast<char*>(pMemVoid);  //the pointer to imagaData
-	//	//	img->widthStep = img_width;
-	//	//	img->imageDataOrigin = static_cast<char*>(pMemVoid); //and again
+			//			chrono::seconds zeit(100000000);
+			//while (stop == 0)
+			//{
+			//	if (is_FreezeVideo(hCam, IS_WAIT) == IS_SUCCESS)
+			//	{
+			//							img = cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 1);
+			//		img->nSize = sizeof(IplImage);
+			//		img->ID = 0;
+			//		img->nChannels = 1;
+			//		img->alphaChannel = 0;
+			//		img->depth = 8;
+			//		img->dataOrder = 0;
+			//		img->origin = 0;
+			//		img->align = 4; // egal
+			//		img->width = img_width;
+			//		img->height = img_height;
+			//		img->roi = NULL;
+			//		img->maskROI = NULL;
+			//		img->imageId = NULL;
+			//		img->tileInfo = NULL;
+			//		img->imageSize = img_width * img_height;
+			//		img->imageData = (char*)pMemVoid; //the pointer to imagaData
+			//		img->widthStep = img_width;
+			//		img->imageDataOrigin = (char*)pMemVoid; //and again
 
-	//	//	//now you can use your img just like a normal OpenCV image	
+					//now you can use your img just like a normal OpenCV image	
 
-	//		//// Resize img (für cvShowImage)
-	//		//IplImage *img_resized;
-	//		//double resize_factor = 0.1;
-	//		//img_resized = cvCreateImage(cvSize(int(resize_factor * img->width), int(resize_factor * img->height)), img->depth, img->nChannels);
-	//		//cvResize(img, img_resized);
+					// Mittelwert aller Pixel
+					//double sum = 0;
+					//double result = 0.0;
+					//vector<int> valuevec;////
+					//int sum_val;///
+					//
+					//for (int i = 0; i < img->imageSize; i++)
+					//{
+					//	sum += img->imageData[i];
+					//	
+					//	long int value = atol(&img->imageData[i]);
+					//	valuevec.push_back(value);
+					//	sum_val = std::accumulate(valuevec.begin(), valuevec.end(), 0);
+					//	cout << sum_val ;	
+					//}
 
-	//		//cvNamedWindow( "A", 1 );
-	//		//cvShowImage("A",img_resized);
-	cv::waitKey(1);
-	///*	else 
-	//		CameraInit();*/
-	}	
-	while (stop==0);
-	
-	
-	//is_ExitCamera(hCam);
-	
-return 0;
-}
+					//result = (double)sum/img->imageSize;
+					//cout << img->imageSize<< endl;
+					//cout<< &img->imageData[452];
+					// Resize img (für cvShowImage)
+					//
+					//cvResize(img, img_resized);
+
+					//cvNamedWindow("Camera", WINDOW_AUTOSIZE);
+					//cout << img-> width << "img-> width" << img -> height<<"img -> height"<< img-> nSize <<"img-> nSize"<< img-> imageSize <<endl;
+					//cout<<"Dataorigin" <<img->imageData<< endl;
+					//cvShowImage("Camera",img_resized);
+					//cvShowImage("Camera", img);
+					
+			
+			
+			
+			
+		//	
+		//Mat output;
+		//createGaussian(Size(im_rgb.cols, im_rgb.rows), output, im_rgb.cols/2, im_rgb.rows/2, 1, 1);
+		//imshow("Gaussian",output);
+
+			
+			
+			
+			
+			
+			
+			
+			waitKey(0);
+					
+				/*}
+				else
+				{
+					cout << "ERROR FREEZE" << endl;
+				}*/
+			
+				//funktion calibrate();
+
+
+				//this_thread::sleep_for(zeit);
+				//stop = GetAsyncKeyState(VK_LSHIFT);
+			//}
+
+			is_ExitCamera(hCam);
+			return 0;
+		}
