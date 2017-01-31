@@ -1,29 +1,32 @@
-﻿Build started 26.01.2017 18:16:28.
+﻿Build started 31.01.2017 18:03:54.
      1>Project "D:\Documents\Visual Studio 2012\Projects\IMREAD\IMREAD\IMREAD.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          D:\visualstudio\VC\bin\CL.exe /c /I"C:\Program Files\IDS\uEye\Develop\include" /ID:\opencv300\opencv\build\x86\vc11\..\..\include /Zi /nologo /W3 /WX- /Od /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt MAIN.cpp
          MAIN.cpp
      1>C:\Program Files\IDS\uEye\Develop\include\uEyeCaptureInterface.h(248): warning C4005: 'IS_FLASH_IO_PORT_MASK' : macro redefinition
                  C:\Program Files\IDS\uEye\Develop\include\ueye_deprecated.h(64) : see previous definition of 'IS_FLASH_IO_PORT_MASK'
-     1>MAIN.cpp(98): warning C4018: '<' : signed/unsigned mismatch
-     1>MAIN.cpp(103): warning C4018: '<' : signed/unsigned mismatch
-     1>MAIN.cpp(104): warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
-     1>MAIN.cpp(108): warning C4018: '<' : signed/unsigned mismatch
-     1>MAIN.cpp(117): warning C4018: '<' : signed/unsigned mismatch
-     1>MAIN.cpp(142): warning C4018: '<' : signed/unsigned mismatch
-     1>MAIN.cpp(144): warning C4018: '<' : signed/unsigned mismatch
-     1>MAIN.cpp(316): warning C4101: 'varinaceY' : unreferenced local variable
-     1>MAIN.cpp(315): warning C4101: 'meanY' : unreferenced local variable
-     1>MAIN.cpp(628): warning C4101: 'pMem' : unreferenced local variable
+     1>MAIN.cpp(44): warning C4114: same type qualifier used more than once
+     1>MAIN.cpp(82): warning C4018: '<' : signed/unsigned mismatch
+     1>MAIN.cpp(87): warning C4018: '<' : signed/unsigned mismatch
+     1>MAIN.cpp(88): warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
+     1>MAIN.cpp(92): warning C4018: '<' : signed/unsigned mismatch
+     1>MAIN.cpp(99): warning C4018: '<' : signed/unsigned mismatch
+     1>MAIN.cpp(121): warning C4018: '<' : signed/unsigned mismatch
+     1>MAIN.cpp(123): warning C4018: '<' : signed/unsigned mismatch
+     1>MAIN.cpp(295): warning C4101: 'varianceX' : unreferenced local variable
+     1>MAIN.cpp(295): warning C4101: 'varinaceY' : unreferenced local variable
+     1>MAIN.cpp(294): warning C4101: 'meanY' : unreferenced local variable
+     1>MAIN.cpp(294): warning C4101: 'meanX' : unreferenced local variable
+     1>MAIN.cpp(593): warning C4101: 'pMem' : unreferenced local variable
        Link:
          D:\visualstudio\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\Documents\Visual Studio 2012\Projects\IMREAD\Release\IMREAD.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\Program Files\IDS\uEye\Develop\Lib" /LIBPATH:D:\opencv300\opencv\build\x86\vc11\staticlib /LIBPATH:D:\opencv300\opencv\build\x86\vc11\lib "C:\Program Files\IDS\uEye\Develop\Lib\uEye_api.lib" "C:\Program Files\IDS\uEye\Develop\Lib\uEye_tools.lib" D:\opencv300\opencv\build\x86\vc11\lib\opencv_ts300.lib D:\opencv300\opencv\build\x86\vc11\lib\opencv_world300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_calib3d300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_core300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_features2d300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_flann300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_highgui300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_imgcodecs300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_imgproc300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_ml300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_objdetect300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_photo300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_shape300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_stitching300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_superres300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_video300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_videoio300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\opencv_videostab300.lib D:\opencv300\opencv\build\x86\vc11\staticlib\ippicvmt.lib D:\opencv300\opencv\build\x86\vc11\staticlib\IlmImfd.lib D:\opencv300\opencv\build\x86\vc11\staticlib\libtiffd.lib D:\opencv300\opencv\build\x86\vc11\staticlib\libpngd.lib D:\opencv300\opencv\build\x86\vc11\staticlib\libjasperd.lib D:\opencv300\opencv\build\x86\vc11\staticlib\libjpegd.lib D:\opencv300\opencv\build\x86\vc11\staticlib\libwebpd.lib D:\opencv300\opencv\build\x86\vc11\staticlib\zlibd.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\Documents\Visual Studio 2012\Projects\IMREAD\Release\IMREAD.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\Documents\Visual Studio 2012\Projects\IMREAD\Release\IMREAD.lib" /MACHINE:X86 /SAFESEH Release\MAIN.obj
          Generating code
-     1>d:\documents\visual studio 2012\projects\imread\imread\main.cpp(545): warning C4700: uninitialized local variable 'm_lMemoryId' used
-     1>d:\documents\visual studio 2012\projects\imread\imread\main.cpp(545): warning C4700: uninitialized local variable 'm_pcImageMemory' used
+     1>d:\documents\visual studio 2012\projects\imread\imread\main.cpp(516): warning C4700: uninitialized local variable 'm_lMemoryId' used
+     1>d:\documents\visual studio 2012\projects\imread\imread\main.cpp(516): warning C4700: uninitialized local variable 'm_pcImageMemory' used
          Finished generating code
          IMREAD.vcxproj -> D:\Documents\Visual Studio 2012\Projects\IMREAD\Release\IMREAD.exe
      1>Done Building Project "D:\Documents\Visual Studio 2012\Projects\IMREAD\IMREAD\IMREAD.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:04.02
+Time Elapsed 00:00:25.71
