@@ -96,6 +96,7 @@ vector<Point2f> findCenterMassCenter(Mat snap)
 		circle( drawing, mc[i], 4, color, -1, 8, 0 );
 	}
 
+
 	for( int i = 0; i< contours.size(); i++ )
 	{
 		// printf(" * Contour[%d] - Area (M_00) = %.2f - Area OpenCV: %.2f - Length: %.2f \n", i, mu[i].m00, contourArea(contours[i]), arcLength( contours[i], true ) );
@@ -402,6 +403,7 @@ void printHistogram(const map<int, int>& histogram) //create vector  with 0 and 
 
 
 
+
 int main()
 {
 
@@ -517,7 +519,12 @@ int main()
 		is_ExitCamera(hCam);
 	}
 
-	 
+	
+	
+	
+	
+	
+	
 	int initcamera = is_InitCamera(&hCam, nullptr);
 	if(initcamera != IS_SUCCESS)
 	{
@@ -632,6 +639,7 @@ int main()
 		waitKey(0);
 		stop = GetAsyncKeyState(VK_LSHIFT);
 	}
+
 
 
 	//chiusura e pulizia della telecamera

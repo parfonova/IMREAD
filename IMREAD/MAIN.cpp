@@ -5,6 +5,7 @@
 #include "dos.h"
 #include "stdio.h"
 #include <stdlib.h>
+
 #include <stddef.h>
 #include <conio.h>
 #include "math.h"
@@ -22,6 +23,7 @@
 #include <array>
 #include <opencv2/imgproc.hpp>
 #include <algorithm>
+//#include <unistd.h>
 #include <uEyeCaptureInterface.h>
 #include <thread>
 #include <chrono>
@@ -32,18 +34,27 @@
 #include <functional>
 #include <opencv2/core/cuda.hpp>
 #include "opencv2/objdetect/objdetect.hpp"
+//for Gaussfitting
+
+
+
 
 using namespace cv;  
 using namespace std;
 
+
 short stop=0;
 char key;
-// Global variables für Canny
+/// Global variables für Canny
 const int edgeThresh = 1;//ok
 const int lowThreshold = 15 ;
 const int const max_lowThreshold = 100;
 const int ratio1 = 2;//war 3 ist ok oder vllt 2
 const int kernel_size = 3;//gut so
+
+const int img_width = 3840;
+const int img_height = 2748;
+const int img_bpp = 8;
 
 Mat im_gray;
 Mat im_bw;
@@ -53,9 +64,13 @@ Mat im_bw_inv;
 Mat im_rgb;
 Mat image;
 
+
+
 vector<vector<Point> > contours;
 vector<Vec4i> hierarchy;
 RNG rng(12345);
+
+
 
 string window_name_rgb = "Laser Beam in RGB";
 string window_name_bw = "Laser Beam in BW";
@@ -69,13 +84,15 @@ string im_extension = ".jpg";
 string bw = "_bw";
 
 
-vector<Point2f> findCenterMassCenter(Mat snap)
-{	//Mat im_thresh;
-	//threshold(snap,im_thresh , 127, 255, THRESH_BINARY_INV);
+vector<Point2f> findCenterMassCenter()
+{
 	// Reduce noise with a kernel 3x3
-	//blur( im_gray, im_contour, Size(3,3) ); //берет  изображение im_gray и записывает его в Mat im_contour
-	//Canny( im_bw, im_contour, lowThreshold, lowThreshold*ratio1, kernel_size );
-	findContours( im_contour, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+	blur( im_gray, im_contour, Size(3,3) ); //берет  изображение im_gray и записывает его в Mat im_contour
+
+	Canny( im_bw, im_contour, lowThreshold, lowThreshold*ratio1, kernel_size );
+
+	//findContours( im_contour, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+	findContours( im_bw, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
 	dst = Scalar::all(0);  // Using Canny's output as a mask, we display our resultt
 
 	vector<Moments> mu(contours.size() );
@@ -94,6 +111,8 @@ vector<Point2f> findCenterMassCenter(Mat snap)
 		Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
 		drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
 		circle( drawing, mc[i], 4, color, -1, 8, 0 );
+		/// Calculate the area with the moments 00 and compare with the result of the OpenCV function
+		// printf("\t Info: Area and Contour Length \n");
 	}
 
 	for( int i = 0; i< contours.size(); i++ )
@@ -103,12 +122,12 @@ vector<Point2f> findCenterMassCenter(Mat snap)
 		drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
 		circle( drawing, mc[i], 4, color, -1, 8, 0 );
 	}
-	cout << " Object MassCenter " << mc << endl;
-	//imshow( window_name_contour, drawing );
+	cout<<"Schwerpunkt des Objektes"<<mc<<endl;
+	//  imshow( window_name_contour, drawing );
 	return mc;
 }
 
-  
+
 
 
 Point findCenterPointContours()
@@ -317,16 +336,13 @@ Point2d findCenterPointHist(const Mat image)
 	{
 		cout << "Error counting pixels" << endl;
 	}
-	/*else
-	{
-	cout << "sumVertical, sumHorizontal" << sumVertical << "," << sumHorizontal << endl;
-	}
-	*/
+
+
 	double MeanValuePixels = sumVertical / 2;
 	double sumY = 0;
 	double sumX = 0;
-	int itY = 0;
-	int itX = 0;
+	int itY ;
+	int itX ;
 
 
 	for (itY = 0; itY < sumVertical; itY++)
@@ -348,18 +364,18 @@ Point2d findCenterPointHist(const Mat image)
 
 	cout << CenterX << "Integrierte CenterX" << endl;
 
-	/*meanX = (accumulate(VectorX.begin(), VectorX.end(), 0)) / image.cols;
-	for (int row = 0; row < image.rows; row++)
-	{
-	VectorX[row] = VectorX[row] - meanX;
-	VectorX[row] *= (VectorX[row]);
-	}
-	varianceX = (accumulate(VectorX.begin(), VectorX.end(), 0)) ^ 2 / image.cols;
-	cout << "variance " << varianceX << endl;*/
-	return Point2d(CenterX, CenterY);
+	//meanX = (accumulate(VectorX.begin(), VectorX.end(), 0)) / image.cols;
+	//for (int row = 0; row < image.rows; row++)
+	//{
+	//	VectorX[row] = VectorX[row] - meanX;
+	//	VectorX[row] *= (VectorX[row]);
+	//}
+	//varianceX = (accumulate(VectorX.begin(), VectorX.end(), 0)) ^ 2 / image.cols;
+	////cout << "variance " << varianceX << endl;
+
+
+	return Point2d(sumVertical, sumHorizontal);
 }
-
-
 
 map<int, int> computeHistogram(const Mat& image)
 {
@@ -401,16 +417,15 @@ void printHistogram(const map<int, int>& histogram) //create vector  with 0 and 
 //}
 
 
-
 int main()
 {
 
 	HIDS hCam = 1;
-#define CAPTURE_WIDTH  752
-#define CAPTURE_HEIGHT 480
-	int pWidth = CAPTURE_WIDTH;
-	int pHeight = CAPTURE_HEIGHT;
-	Mat im_snap(CAPTURE_HEIGHT, CAPTURE_WIDTH,CV_8UC1);
+#define CAPTURE_WIDTH  768
+#define CAPTURE_HEIGHT 576
+
+	//Allocazione della matrice immagine per il frame catturato dalla telecamera
+	Mat im_snap(CAPTURE_HEIGHT, CAPTURE_WIDTH,CV_8UC3);
 
 	//puntatori memoria
 	char* m_pcImageMemory;
@@ -420,16 +435,10 @@ int main()
 
 	//Apre Camera con ID 1
 	int BITS_PER_PIXEL = 16;
-
-	 SENSORINFO sensor_info;
-	 CAMINFO camera_info;
-
-
-	/*	int SenspWidth(sensor_info.nMaxWidth);
-	int SenspHeight = (sensor_info.nMaxHeight);
-	int pixelsize = (sensor_info.wPixelSize);
-	char Colormode = (sensor_info.nColorMode);*/
-
+	int pWidth = CAPTURE_WIDTH;
+	int pHeight = CAPTURE_HEIGHT; 
+	SENSORINFO sensor_info;
+	CAMINFO camera_info;
 
 	double FPS,NEWFPS;
 	FPS = 3; // 2.13 ist max
@@ -444,6 +453,7 @@ int main()
 
 	is_SetDisplayMode (hCam, IS_SET_DM_DIB); //Bitmap-Modus
 	is_SetColorMode (hCam, IS_CM_RGB8_PACKED);
+	//is_SetColorMode (hCam, IS_CM_MONO8);              GROESSTER FRAGE
 	is_SetImageSize (hCam, pWidth, pHeight);
 
 	double disable = 0;
@@ -497,41 +507,42 @@ int main()
 	//threshold ( im_bw, im_bw_inv, threshold_value, max_BINARY_value,THRESH_BINARY_INV);// ein SWsBild, wo  Laserstrahl schwarz ist
 	//namedWindow ( window_name_bw_inv, CV_WINDOW_AUTOSIZE );
 	//imshow ( window_name_bw_inv, im_bw_inv);
-	
 	//findCenterMassCenter();//Methode mit Objekt Schwerpunkt
 	//findCenterPointContours();//Methode mit Contouren
 	//findCenterPointHist(im_bw); //Methode mit Integralen und Histogramen
 
 
 
-	if(is_InitCamera (&hCam, nullptr)!= IS_SUCCESS)
+	if(is_InitCamera (&hCam, NULL)!= IS_SUCCESS)
 	{
 		cout << " Initialisierungsproblem: Kamera ausstecken-einstecken?" << endl;
-		//return 0;
+		//		return 0;
 	}
 
 
 
+	//Pulizia memoria da foto precedenti
 	if (hCam != 0){
 		is_FreeImageMem (hCam,m_pcImageMemory,m_lMemoryId);
 		is_ExitCamera(hCam);
 	}
 
-	 
-	int initcamera = is_InitCamera(&hCam, nullptr);
+	//inizializzazione della telecamera 
+	int initcamera = is_InitCamera(&hCam, NULL);
 	if(initcamera != IS_SUCCESS)
 	{
 		cout << endl << "Initialisierung der Camera ist möglich!" << endl;
 		exit(-1);
 	}
 
+	// Acquisisce informazioni riguardanti la telecamera
 	int camerainfo = is_GetCameraInfo (hCam, &camera_info);
 	if(camerainfo != IS_SUCCESS)
 	{
 		printf("Impossibile acquisire le informazioni della telecamera");
 		exit(-1);
 	} 
-	
+	// Acquisisce informazioni riguardanti il sensore della telecamera
 	int sensorinfo = is_GetSensorInfo (hCam, &sensor_info);
 	if(sensorinfo != IS_SUCCESS)
 	{
@@ -539,16 +550,16 @@ int main()
 		exit(-1);
 	}
 
-	
-	cout << endl << "<<< CARATTERISTICHE DELLA TELECAMERA COLLEGATA >>>"<<endl;
-	cout << "Numero seriale: " << camera_info.SerNo << endl;
+	//Output informazioni camera/sensore
+	cout<<endl<<"<<< CARATTERISTICHE DELLA TELECAMERA COLLEGATA >>>"<<endl;
+	cout<<"Numero seriale: " << camera_info.SerNo << endl;
 	cout << "Produttore: " << camera_info.ID << endl;
 	cout << "Modello: " << sensor_info.strSensorName << endl;
 	cout << "Dimensioni massime per l'immagine: " << sensor_info.nMaxWidth << "x" << sensor_info.nMaxHeight << endl << endl;
 
 
 	//Imposta la modalità di colore BGR24 
-	int colormode = is_SetColorMode(hCam, IS_CM_RGB8_PACKED);
+	int colormode = is_SetColorMode(hCam, IS_CM_BGR8_PACKED);
 	//int colormode = is_SetColorMode(hCam, IS_SET_CM_RGB24);
 	if(colormode != IS_SUCCESS)
 	{
@@ -556,34 +567,39 @@ int main()
 		exit(-1);
 	}
 
-	int rit = is_AllocImageMem (hCam, pWidth, pHeight, 24, &m_pcImageMemory, &m_lMemoryId);
+	//imposta dimensioni immagini che voglio catturare
+	int pXPos = (sensor_info.nMaxWidth);
+	int pYPos = (sensor_info.nMaxHeight);
+
+	//Inizializzazione Memoria camera
+	int rit = is_AllocImageMem (hCam,pXPos,pYPos, 24, &m_pcImageMemory, &m_lMemoryId);
 	if(rit != IS_SUCCESS)
 	{
-		cout << endl << "Impossible to initialize memory " << endl;
+		cout<<endl<<"IMPOSSIBILE INIZIALIZZARE LA MEMORIA"<<endl;
 		system("PAUSE");
 		exit(-1);
 	}
-	cout << endl << "Memoria inizializzata" << endl;
+	cout<<endl<<"Memoria inizializzata"<<endl;
 
-
+	//attivazione della locazione di memoria
 	int rat = is_SetImageMem (hCam, m_pcImageMemory, m_lMemoryId);
 	if(rat != IS_SUCCESS)
 	{
-		cout << endl << "IMPOSSIBILE ATTIVARE LA MEMORIA" << endl;
+		cout<<endl<<"IMPOSSIBILE ATTIVARE LA MEMORIA"<<endl;
 		system("PAUSE");
 		exit(-1);
 	}
 	cout<<endl<<"Memoria Attivata"<<endl;
 
-
+	//impostazioni correzioni di colore
 	double strenght_factor = 1.0;
 	int colorcorrection = is_SetColorCorrection(hCam, IS_CCOR_ENABLE, &strenght_factor);
 
-	
+	//impostazioni correzione del bianco
 	double pval = 1;
 	int whiteb = is_SetAutoParameter(hCam, IS_SET_ENABLE_AUTO_WHITEBALANCE, &pval, 0);
 
-	
+	//impostazione della correzione guadagno
 	double gval = 1;
 	int gains = is_SetAutoParameter(hCam, IS_SET_ENABLE_AUTO_GAIN, &gval, 0);
 
@@ -592,17 +608,21 @@ int main()
 	int dummy;
 	char *pMem, *pLast;
 
+	//ciclo di ripetizione
+	//for (int i=0;i<10;i++)
+	//{
 	short stop = 0;
 
 	while (stop==0)
 	{
 		int freeze = is_FreezeVideo(hCam, IS_WAIT);
-		if (freeze != IS_SUCCESS)
+		if(freeze != IS_SUCCESS)
 		{
-			cout << endl << "Impossible to freeze video" << endl;
+			cout<<endl<<"IMPOSSIBILE ACQUISIRE DALLA TELECAMERA"<<endl;
 			system("PAUSE");
 			exit(-1);
 		}
+
 
 
 		if (freeze == IS_SUCCESS)
@@ -611,29 +631,14 @@ int main()
 			int n_Ret = is_GetImageMem(hCam, (void**)&pLast);
 		}
 
-		IplImage* tmpImg = cvCreateImageHeader(cvSize(pWidth, pHeight), IPL_DEPTH_8U, 3);
+		IplImage* tmpImg = cvCreateImageHeader(cvSize (pXPos, pYPos), IPL_DEPTH_8U,3); 
 		tmpImg->imageData = m_pcImageMemory;
 		im_snap = cvarrToMat(tmpImg);
-
-		imshow("SNAPSHOT", im_snap);
-		//int DEPTH = im_snap.depth();
-		//cout << DEPTH << "depth";
-		//im_gray = im_snap > 127;
-		//	cout << im_gray.depth() << "im_gray.depth()";
-		//cvtColor( im_snap, im_gray, CV_RGB2GRAY);
-		//blur( im_gray, im_contour, Size(3,3) );
-
-		imshow("gray", im_gray);
-		//	cout << "Pic number " << i << endl;;
-		//findCenterPointHist(image);
-		//findCenterPointContours();
-		//findCenterMassCenter(im_snap);
-		printHistogram(computeHistogram(image));
+		imshow("SNAPSHOT",im_snap);
+		//stop = GetAsyncKeyState(VK_LSHIFT);
 		waitKey(0);
 		stop = GetAsyncKeyState(VK_LSHIFT);
 	}
-
-
 	//chiusura e pulizia della telecamera
 	int en = is_ExitCamera(hCam);
 	if (en == IS_SUCCESS)
@@ -647,7 +652,57 @@ int main()
 
 
 
-//findCenterMassCenter();//Methode mit Objekt Schwerpunkt
-//findCenterPointContours();//Methode mit Contouren
-//findCenterPointHist(im_bw); //Methode mit Integralen und Histogramen
 
+//////////////
+//////////////	short stop=0;
+//////////////
+//////////////	while (stop==0)
+//////////////	{		
+//////////////		if(is_FreezeVideo(hCam, IS_WAIT) == IS_SUCCESS){
+//////////////			void *pMemVoid; //pointer to where the image is stored
+//////////////			is_GetImageMem (hCam, &pMemVoid);
+//////////////			IplImage * img;
+//////////////			img=cvCreateImage(cvSize(img_width, img_height), IPL_DEPTH_8U, 1); 
+//////////////			img->nSize=sizeof(IplImage);
+//////////////			img->ID=0;
+//////////////			img->nChannels=1;
+//////////////			img->alphaChannel=0;
+//////////////			img->depth=8;
+//////////////			img->dataOrder=0;
+//////////////			img->origin=0;
+//////////////			img->align=4;	// egal
+//////////////			img->width=img_width;
+//////////////			img->height=img_height;
+//////////////			img->roi=NULL;
+//////////////			img->maskROI=NULL;
+//////////////			img->imageId=NULL;
+//////////////			img->tileInfo=NULL;
+//////////////			img->imageSize=img_width*img_height;
+//////////////			img->imageData=(char*)pMemVoid;  //the pointer to imagaData
+//////////////			img->widthStep=img_width;
+//////////////			img->imageDataOrigin=(char*)pMemVoid; //and again
+
+
+
+//////////////	//findCenterMassCenter();//Methode mit Objekt Schwerpunkt
+//////////////	//findCenterPointContours();//Methode mit Contouren
+//////////////	//findCenterPointHist(im_bw); //Methode mit Integralen und Histogramen
+//////////////
+//////////////			// Resize img (für cvShowImage)
+//////////////			IplImage* img_resized = cvCreateImageHeader(cvSize);
+//////////////			double resize_factor = 1.3;//0.8
+//////////////			img_resized = cvCreateImage(cvSize((int)(resize_factor*img->width), (int)(resize_factor*img->height)), img->depth, img->nChannels);
+//////////////			cvResize(img, img_resized);
+//////////////			//im_rgb =  img_resized;
+//////////////
+
+//////////////
+//////////////			resizeWindow("A", img_width/3, img_height/4);
+
+//////////////	else
+//////////////	{
+//////////////		cout << "ERROR FREEZE" << endl;
+//////////////	}
+//////////////	//this_thread::sleep_for(zeit);
+//////////////	stop = GetAsyncKeyState(VK_LSHIFT);
+//////////////}
